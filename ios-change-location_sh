@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
-# hk-watch-location.sh — 通过 USB/iAP2 向获批测试设备发送模拟坐标
+# ios-change-location.sh — 通过 USB/iAP2 向获批测试设备发送模拟坐标
 #
 # 用法：
-#   ./hk-watch-location.sh              # 一键执行完整流程（默认香港坐标，15 分钟会话）
-#   ./hk-watch-location.sh 22.2810 114.1588   # 自定义坐标
-#   ./hk-watch-location.sh send         # 只发送（跳过已完成的安装步骤）
-#   ./hk-watch-location.sh stop         # 停止发送，恢复手机真实定位
+#   ./ios-change-location.sh              # 一键执行完整流程（默认香港坐标，15 分钟会话）
+#   ./ios-change-location.sh 22.2810 114.1588   # 自定义坐标
+#   ./ios-change-location.sh send         # 只发送（跳过已完成的安装步骤）
+#   ./ios-change-location.sh stop         # 停止发送，恢复手机真实定位
 #
 # 运行前提：
 #   1. macOS + 已安装 uv（无则脚本自动安装）
@@ -22,13 +22,13 @@ DURATION=900                 # 单轮会话时长（秒）；发送循环执行�
 MAX_TOTAL=1800               # 持续发送总时长上限（秒）= 30 分钟，到达后自动终止并输出结果解读
 # 组件包：主包（accessory-location 脚本/源码 + identity MFi 证书）
 #          + 按平台独立的 lib 包（依赖 wheel），脚本按 CPU 架构自动选择
-BUNDLE_DIR="/tmp/hk-watch-location-bundle"
-BASE_URL="https://github.com/siruoren/hk-watch-location/releases/download/v1"
-BUNDLE_URL="${BASE_URL}/hk-watch-location-bundle.zip"
+BUNDLE_DIR="/tmp/ios-change-location-bundle"
+BASE_URL="https://github.com/siruoren/ios-change-location/releases/download/v1"
+BUNDLE_URL="${BASE_URL}/ios-change-location-bundle.zip"
 # 按平台选择 lib 包（arm64 / x86_64）
 case "$(uname -m)" in
-    arm64) LIB_NAME="hk-watch-location-lib-macos-arm64.zip" ;;
-    *)     LIB_NAME="hk-watch-location-lib-macos-x86_64.zip" ;;
+    arm64) LIB_NAME="ios-change-location-lib-macos-arm64.zip" ;;
+    *)     LIB_NAME="ios-change-location-lib-macos-x86_64.zip" ;;
 esac
 LIB_URL="${BASE_URL}/${LIB_NAME}"
 PYPI_MIRROR="https://pypi.tuna.tsinghua.edu.cn/simple"
@@ -114,7 +114,7 @@ PROBE_BYTES=262144    # 测速拉取的前缀字节数（256KB）
 dl() {
     rm -f "$2"
     curl -L --progress-bar --connect-timeout 15 --max-time "$4" --retry 3 --retry-delay 2 \
-         -o "$2" -H "User-Agent: hk-watch-location" "$1"
+         -o "$2" -H "User-Agent: ios-change-location" "$1"
     [ -f "$2" ] && [ "$(stat -f%z "$2" 2>/dev/null || echo 0)" -gt "$3" ]
 }
 
@@ -129,7 +129,7 @@ fetch() {
             local code
             code=$(curl -sL --connect-timeout 5 --max-time "$PROBE_TIMEOUT" \
                         -r "0-$((PROBE_BYTES - 1))" -o /dev/null -w '%{http_code}' \
-                        -H "User-Agent: hk-watch-location" "${m}${url}" 2>/dev/null || echo 000)
+                        -H "User-Agent: ios-change-location" "${m}${url}" 2>/dev/null || echo 000)
             if [ "$code" = "200" ] || [ "$code" = "206" ]; then
                 c_ok "  测速通过: ${m}"
                 fast_proxies+=("$m")
@@ -180,7 +180,7 @@ setup_bundle() {
 
     # --- 主包（脚本 + 证书），下载失败则无法继续；下载/解压失败自动清理重下，最多 10 次 ---
     if ! bundle_ready; then
-        local bundle_zip="/tmp/hk-watch-location-bundle.zip"
+        local bundle_zip="/tmp/ios-change-location-bundle.zip"
         local btry=0
         while [ "$btry" -lt 10 ]; do
             btry=$((btry + 1))

@@ -1,11 +1,11 @@
-﻿# hk-watch-location.ps1 - 通过 USB/iAP2 向获批测试设备发送模拟坐标 [Windows 版]
+﻿# ios-change-location.ps1 - 通过 USB/iAP2 向获批测试设备发送模拟坐标 [Windows 版]
 #
 #
 # 用法（在 PowerShell 中执行）：
-#   powershell -ExecutionPolicy Bypass -File .\hk-watch-location.ps1                    # 一键完整流程
-#   powershell -ExecutionPolicy Bypass -File .\hk-watch-location.ps1 run 22.2810 114.1588  # 自定义坐标
-#   powershell -ExecutionPolicy Bypass -File .\hk-watch-location.ps1 send               # 跳过安装步骤直接发送
-#   powershell -ExecutionPolicy Bypass -File .\hk-watch-location.ps1 stop               # 停止发送并恢复真实定位
+#   powershell -ExecutionPolicy Bypass -File .\ios-change-location.ps1                    # 一键完整流程
+#   powershell -ExecutionPolicy Bypass -File .\ios-change-location.ps1 run 22.2810 114.1588  # 自定义坐标
+#   powershell -ExecutionPolicy Bypass -File .\ios-change-location.ps1 send               # 跳过安装步骤直接发送
+#   powershell -ExecutionPolicy Bypass -File .\ios-change-location.ps1 stop               # 停止发送并恢复真实定位
 #
 # Windows 特有前提：
 #   1. 已安装 iTunes（官网版）或 Microsoft Store 的"Apple Devices/设备"应用
@@ -25,10 +25,10 @@ param(
 # ========================= 可配置参数 =========================
 # 组件包：主包（accessory-location 脚本/源码 + identity MFi 证书）
 #          + 按平台独立的 lib 包（依赖 wheel），Windows 固定使用 win-amd64
-$BundleDir   = Join-Path $env:USERPROFILE "hk-watch-location-bundle"
-$BaseUrl     = "https://github.com/siruoren/hk-watch-location/releases/download/v1"
-$BundleUrl   = "$BaseUrl/hk-watch-location-bundle.zip"
-$LibName     = "hk-watch-location-lib-win-amd64.zip"
+$BundleDir   = Join-Path $env:USERPROFILE "ios-change-location-bundle"
+$BaseUrl     = "https://github.com/siruoren/ios-change-location/releases/download/v1"
+$BundleUrl   = "$BaseUrl/ios-change-location-bundle.zip"
+$LibName     = "ios-change-location-lib-win-amd64.zip"
 $LibUrl      = "$BaseUrl/$LibName"
 $PyPiMirror  = "https://pypi.tuna.tsinghua.edu.cn/simple"
 # GitHub 加速代理地址（按顺序尝试，全部失效后才回退 GitHub 直连）
@@ -214,7 +214,7 @@ function Invoke-Dl {
     param([string]$Url, [string]$Dest, [long]$MinSize, [int]$TimeoutSec)
     Remove-Item $Dest -Force -ErrorAction SilentlyContinue
     # --ssl-no-revoke：Windows Schannel 证书吊销检查在代理环境下常失败导致 SSL 错误，跳过吊销检查
-    curl.exe -L --progress-bar --ssl-no-revoke --connect-timeout 15 --max-time $TimeoutSec --retry 3 --retry-delay 2 -o $Dest -H "User-Agent: hk-watch-location" $Url
+    curl.exe -L --progress-bar --ssl-no-revoke --connect-timeout 15 --max-time $TimeoutSec --retry 3 --retry-delay 2 -o $Dest -H "User-Agent: ios-change-location" $Url
     if ((Test-Path $Dest) -and ((Get-Item $Dest -ErrorAction SilentlyContinue).Length -gt $MinSize)) { return $true }
     return $false
 }
@@ -284,7 +284,7 @@ function Step-SetupBundle {
 
     # --- 主包（脚本 + 证书），下载失败则无法继续；下载/解压失败自动清理重下，最多 10 次 ---
     if (-not (Test-BundleReady)) {
-        $bundleZip = Join-Path $env:TEMP "hk-watch-location-bundle.zip"
+        $bundleZip = Join-Path $env:TEMP "ios-change-location-bundle.zip"
         $ok = $false
         for ($btry = 1; $btry -le 10; $btry++) {
             # 本地缓存损坏（下载中断的半截文件或代理返回的错误页）→ 删除重下
@@ -502,7 +502,7 @@ function Step-Report {
     }
 
     Write-Host ""
-    Write-Info "测试结束后运行 .\hk-watch-location.ps1 stop，并确认设备已恢复真实定位。"
+    Write-Info "测试结束后运行 .\ios-change-location.ps1 stop，并确认设备已恢复真实定位。"
     Write-Warn2 "坐标包送达不代表系统或应用采纳，也不代表任何服务资格。"
 }
 
@@ -581,7 +581,7 @@ switch ($Command) {
         Step-Report
     }
     default {
-        Write-Host "用法: .\hk-watch-location.ps1 [run|send|stop] [纬度] [经度]"
+        Write-Host "用法: .\ios-change-location.ps1 [run|send|stop] [纬度] [经度]"
         Write-Host "  run  (默认) 完整流程：环境检查 -> 下载组件包 -> 离线装依赖 -> 持续发送（Ctrl+C 停止）"
         Write-Host "  send        直接持续发送（跳过安装步骤，Ctrl+C 停止）"
         Write-Host "  doctor      20 秒诊断：检测手机端获批应用的资格与前台状态"
